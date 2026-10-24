@@ -7,7 +7,8 @@ No ethics screen: the bot has no restrictions on what it buys (the operator's ca
 FILES
 - DB: /home/tsali/amy-live/trading/signals.db, table `decisions` (id, ts, ticker, proposed, action, qty, price, status, rationale, outcome). Prefix every rationale with "V2 ". Open positions = status 'v2_open' (LIVE) or 'v2_sim_open' (DRY). On exit set 'v2_closed' / 'v2_sim_closed' and outcome = realized "$X (+Y%)". Inside rationale keep: `bucket=core|sat; thesis=<one line>; stop=<px>; entry_iso=<ts>`.
 - State: /home/tsali/amy-live/trading/v2_state.json holds {started_iso, start_value, qqq_start, peak_value, regime, regime_iso}. If missing, CREATE it on this run (start_value = current total_value, qqq_start = current QQQ price, peak_value = total_value).
-- DEPOSITS ARE NOT PROFIT. v2_state.json holds `contributed` (total cash the operator has put in) and a `deposits` list. If get_portfolio shows pending_deposits > 0, or total_value jumps with no trade to explain it, treat it as a new deposit: append {date, amount} to deposits, add the amount to contributed, start_value AND peak_value, and TG the operator one line confirming it. Never count a deposit as a gain or let it skew the drawdown breaker.
+- DEPOSITS ARE NOT PROFIT. the operator has $100 auto-deposits on the 1st and 15th of each month. v2_state.json holds `contributed` (total cash put in), a `deposits` list, and `units` (fund-style accounting so performance stays honest as money flows in). On a new deposit (get_portfolio shows pending_deposits > 0 that isn't already in the deposits list, or total_value jumps with no trade to explain it): compute NAV_before = (total_value - amount) / units; units += amount / NAV_before; append {date, amount} to deposits; add the amount to contributed and to peak_value; TG the operator one line confirming it. Never count a deposit as a gain or let it trip the drawdown breaker.
+- PERFORMANCE = time-weighted: NAV = total_value / units (it started at 1.0). Return % = (NAV - 1) * 100. Compare THAT to QQQ's % change since qqq_start. Never compare raw dollar growth to QQQ, because deposits inflate it.
 - Snapshot (ALWAYS, every run): overwrite /home/tsali/amy-live/trading/agentic_snapshot.json with {total_value, cash, buying_power, equity_value, started: contributed, pnl: round(total_value-contributed,2), pnl_pct: round((total_value-contributed)/contributed*100,2), positions: [{ticker,qty,value}], updated: ISO local time}. Don't TG about it.
 - Reddit hype is in table reddit_mentions; overnight research ideas in table ideas. These are INPUTS, never triggers on their own.
 
@@ -56,7 +57,7 @@ TRAILING: once a satellite is up 1x its initial risk, move the stop to breakeven
 - OPEN (~8:40 CT): regime check, core check and rotate if due, exits, then new satellite entries. Main decision session.
 - MIDDAY (~11:30 CT): exits and stop management only. New entries only for an exceptional catalyst.
 - CLOSE (~14:30 CT): exits on closing trend breaks, trail stops, set up tomorrow. No entries after 14:45.
-- WEEKLY (Friday after close): don't trade. TG the operator a desk review: account value and % vs start_value (deposits excluded), vs QQQ since qqq_start, wins and losses with reasons, what you'd change. Keep it under ~15 lines.
+- WEEKLY (Friday after close): don't trade. TG the operator a desk review: account value, contributed, time-weighted return % (NAV) vs QQQ % since qqq_start, wins and losses with reasons, what you'd change. Keep it under ~15 lines.
 
 8. TELEGRAM (python3 /home/tsali/amy-live/amy-telegram-send.py "msg")
 - Ping on every BUY or SELL: ticker, $ amount, why (one line of thesis), stop.

@@ -26,7 +26,7 @@ The full rulebook the agent runs on is **[STRATEGY.md](STRATEGY.md)**, with the 
 | Start | 2026-10-24 |
 | Starting capital | $149.71 (V1's ending $49.71 plus a $100 deposit). Deposits are never counted as profit |
 | Benchmark | QQQ from 704.39 (Friday 2026-10-23 close) |
-| Mode | DRY_RUN (paper) for the first trading day, then LIVE after operator review |
+| Mode | LIVE from the first session (Monday 2026-10-26, 8:40 CT) |
 
 Changes to the rules are logged in [CHANGELOG.md](CHANGELOG.md), and trades in [TRADES.md](TRADES.md).
 
